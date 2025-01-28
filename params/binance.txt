@@ -1,0 +1,7 @@
+symbol@ticker
+symbol@trade
+symbol@aggTrade
+symbol@depth
+symbol@avgPrice
+symbol@avgPrice
+symbol@bookTicker
