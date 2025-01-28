@@ -1,83 +1,77 @@
-
 import asyncio
-import websockets
-import json
-import os
+import time
+from binance.binance import binance_connect
+from bybit.bybit import bybit_connect
+from coinex.coinex import coinex_connect
 
-
-# Time, ID, Price, Quantity, Passive Bid
-def trade_callback(data, filename):
-    rowdata = data["data"]
-    row = f'{rowdata["T"]},{rowdata["t"]},{rowdata["p"]},{rowdata["q"]},{rowdata["m"]}'
-    symbol_path = os.path.join('./data/', str(data["data"]["s"]))
-    file_path = os.path.join(symbol_path, filename)
-    with open(file_path, 'a') as f:
-        f.write(f"{row}\n")
-
-# Time, Open, High, Low, Close, Volume, Trade Count
-def ticker_callback(data, filename):
-    rowdata = data["data"]
-    row = f'{rowdata["E"]},{rowdata["o"]},{rowdata["h"]},{rowdata["l"]},{rowdata["c"]},{rowdata["v"]},{rowdata["n"]},'
-    symbol_path = os.path.join('./data/', str(data["data"]["s"]))
-    file_path = os.path.join(symbol_path, filename)
-    with open(file_path, 'a') as f:
-        f.write(f"{row}\n")
-
-async def connect_stream(uri, callback, filename):
-    async with websockets.connect(uri) as websocket:
-        print(f"Connected to {uri}")
-        while True:
-            message = await websocket.recv()
-            data = json.loads(message)
-
-            callback(data, filename)
-
-async def start_listeners(cryptos: list, streams: list):
-    buri = 'wss://data-stream.binance.vision/stream'
-    
+async def run_listeners(exchanges: dict):
     listeners = []
 
-    # loop through and create listeners for each stream
-    for symbol in cryptos:
-        for stream in streams:
-            uri = f"{buri}?streams={stream_code}"
-            callback = None
-            filename = f'{symbol}_{stream}.csv'
-            stream_code = f"{symbol.lower()}@{stream}"
+    # Iterate over each exchange
+    for exchange in exchanges.items():
+        listener = []  # Default empty listener list
+        # Check which exchange and call the corresponding connect function
+        if exchange[0] == "binance":
+            listener = await binance_connect(exchange)
+        elif exchange[0] == "bybit_spot":
+            listener = await bybit_connect(exchange)
+        elif exchange[0] == "bybit_futures":
+            listener = await bybit_connect(exchange)
+        elif exchange[0] == "coinex_spot":
+            listener = await coinex_connect(exchange)
+        elif exchange[0] == "coinex_futures":
+            listener = await coinex_connect(exchange)
 
-            if stream == "trade":
-                callback = trade_callback
-                
-            elif stream == "ticker":
-                callback = ticker_callback
+        # Only extend listeners if listener is valid (i.e., not None)
+        if listener:
+            listeners.extend(listener)
+        else:
+            print(f"Warning: No listeners returned for {exchange[0]}")
 
-            if callback is not None:
-                listener = asyncio.create_task(connect_stream(uri, callback, filename))
-                listeners.append(listener)
+    # If listeners is not empty, gather them
+    if listeners:
+        await asyncio.gather(*listeners)
+    else:
+        print("No listeners to run.")
 
-
-    await asyncio.gather(*listeners)
-
-def prepare_files(cryptos:list, streams:list):
-    data_path = './data'
-    if not os.path.exists(data_path):
-        os.makedirs(data_path)
-    for crypto in cryptos:
-        crypto_path = os.path.join(data_path, crypto)
-        if not os.path.exists(crypto_path):
-            os.makedirs(crypto_path)
-        
-        for stream in streams:
-            filename = f'{crypto}_{stream}.csv'
-            file_path = os.path.join(crypto_path, filename)
-            if not os.path.exists(file_path):
-                with open(file_path, "w") as f:
-                    f.write("Time,ID,Price,Quantity,Passive Bid\n")
-            
+async def main(scrape_data):
+    try:
+        await run_listeners(scrape_data)
+    except KeyboardInterrupt:
+        print("KeyboardInterrupt caught, stopping listeners...")
+        # Here, you can implement the cancellation of tasks if needed
+        # If the listeners are long-running tasks, you can cancel them.
+        for task in asyncio.all_tasks():
+            task.cancel()
 
 if __name__ == "__main__":
-    cryptos_to_scrape = ["BTCUSDT", "ETHUSDT"]
-    streams_to_scrape = ["trade",'tickers']
-    
-    prepare_files(cryptos_to_scrape, streams_to_scrape)
-    asyncio.run(start_listeners(cryptos_to_scrape, streams_to_scrape))
+    scrape_data = {
+        "binance": {
+            "uri": "wss://data-stream.binance.vision/stream",
+            "cryptos": ["BTCUSDT", "ETHUSDT"],
+            "streams": ["ticker", "trade"]
+        },
+        "bybit_spot": {
+            "uri": "wss://stream.bybit.com/v5/public/spot",
+            "cryptos": ["BTCUSDT", "ETHUSDT"],
+            "streams": ["tickers", "publicTrade"]
+        },
+        "bybit_futures": {
+            "uri": "wss://stream.bybit.com/v5/public/linear",
+            "cryptos": ["BTCUSDT", "ETHUSDT"],
+            "streams": ["tickers", "publicTrade"]
+        },
+        "coinex_spot": {
+            "uri": "wss://socket.coinex.com/v2/spot",
+            "cryptos": ["BTCUSDT", "ETHUSDT"],
+            "streams": ["bbo", "trade"]
+        },
+        "coinex_futures": {
+            "uri": "wss://socket.coinex.com/v2/futures",
+            "cryptos": ["BTCUSDT", "ETHUSDT"],
+            "streams": ["bbo", "trade"]
+        }
+    }
+
+    # Start the listeners with graceful shutdown on KeyboardInterrupt
+    asyncio.run(main(scrape_data))

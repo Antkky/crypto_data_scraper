@@ -1,0 +1,27 @@
+{
+    "binance": {
+        "uri": "wss://data-stream.binance.vision/stream",
+        "cryptos": ["BTCUSDT", "ETHUSDT"],
+        "streams": ["ticker", "trade"]
+    },
+    "bybit_spot": {
+        "uri": "wss://stream.bybit.com/v5/public/spot",
+        "cryptos": ["BTCUSDT", "ETHUSDT"],
+        "streams": ["tickers", "publicTrade"]
+    },
+    "bybit_futures": {
+        "uri": "wss://stream.bybit.com/v5/public/linear",
+        "cryptos": ["BTCUSDT", "ETHUSDT"],
+        "streams": ["tickers", "publicTrade"]
+    },
+    "coinex_spot": {
+        "uri": "wss://socket.coinex.com/v2/spot",
+        "cryptos": ["BTCUSDT", "ETHUSDT"],
+        "streams": ["bbo", "trade"]
+    },
+    "coinex_futures": {
+        "uri": "wss://socket.coinex.com/v2/futures",
+        "cryptos": ["BTCUSDT", "ETHUSDT"],
+        "streams": ["bbo", "trade"]
+    }
+}
