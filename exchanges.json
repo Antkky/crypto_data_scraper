@@ -1,7 +1,22 @@
 {
-    "binance": {
-        "uri": "wss://data-stream.binance.vision/stream",
-        "cryptos": ["BTCUSDT", "ETHUSDT"],
+    "binance_btc_ticker": {
+        "uri": "wss://data-stream.binance.vision/stream?streams=btcusdt@ticker&timeUnit=MICROSECOND",
+        "cryptos": ["BTCUSDT"],
+        "streams": ["ticker", "trade"]
+    },
+    "binance_btc_trades": {
+        "uri": "wss://data-stream.binance.vision/stream?streams=btcusdt@trade&timeUnit=MICROSECOND",
+        "cryptos": ["BTCUSDT"],
+        "streams": ["ticker", "trade"]
+    },
+    "binance_eth_ticker": {
+        "uri": "wss://data-stream.binance.vision/stream?streams=ethusdt@ticker&timeUnit=MICROSECOND",
+        "cryptos": ["BTCUSDT"],
+        "streams": ["ticker", "trade"]
+    },
+    "binance_eth_trades": {
+        "uri": "wss://data-stream.binance.vision/stream?streams=ethusdt@trade&timeUnit=MICROSECOND",
+        "cryptos": ["BTCUSDT"],
         "streams": ["ticker", "trade"]
     },
     "bybit_spot": {
@@ -23,5 +38,10 @@
         "uri": "wss://socket.coinex.com/v2/futures",
         "cryptos": ["BTCUSDT", "ETHUSDT"],
         "streams": ["bbo", "trade"]
+    },
+    "bitfinex": {
+        "uri": "wss://api-pub.bitfinex.com/ws/2",
+        "cryptos": ["tBTCUSD", "tETHUSD"],
+        "streams": ["ticker", "trades"]
     }
 }
